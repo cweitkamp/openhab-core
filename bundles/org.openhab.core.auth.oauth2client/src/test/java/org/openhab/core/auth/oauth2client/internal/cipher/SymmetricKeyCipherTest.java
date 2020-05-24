@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.core.auth.oauth2client.test.internal.cipher;
+package org.openhab.core.auth.oauth2client.internal.cipher;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -22,10 +22,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.junit.Before;
 import org.junit.Test;
-import org.openhab.core.auth.oauth2client.internal.cipher.SymmetricKeyCipher;
-import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 
@@ -34,14 +33,15 @@ import org.osgi.service.cm.ConfigurationAdmin;
  *
  * @author Gary Tse - Initial contribution
  */
-public class CipherTest {
+@NonNullByDefault
+public class SymmetricKeyCipherTest {
 
     private static final String PLAIN_TEXT = "hello world";
 
-    private SymmetricKeyCipher symmetricKeyCipher;
+    private @NonNullByDefault({}) SymmetricKeyCipher symmetricKeyCipher;
 
     @Before
-    public void setUp() throws IOException, InvalidSyntaxException, NoSuchAlgorithmException {
+    public void setUp() throws IOException, NoSuchAlgorithmException {
         symmetricKeyCipher = new SymmetricKeyCipher(mockConfigurationAdmin());
     }
 

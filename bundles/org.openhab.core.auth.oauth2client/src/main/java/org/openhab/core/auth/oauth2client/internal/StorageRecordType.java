@@ -27,13 +27,13 @@ public enum StorageRecordType {
     ACCESS_TOKEN_RESPONSE(".AccessTokenResponse"),
     SERVICE_CONFIGURATION(".ServiceConfiguration");
 
-    private String suffix;
+    private final String suffix;
 
     private StorageRecordType(String suffix) {
         this.suffix = suffix;
     }
 
     public String getKey(@Nullable String handle) {
-        return (handle == null) ? this.suffix : (handle + this.suffix);
+        return handle == null ? suffix : handle + suffix;
     }
 }

@@ -63,7 +63,7 @@ public class OAuthClientServiceImpl implements OAuthClientService {
 
     // Constructor params - static
     private final String handle;
-    private final int tokenExpiresInSeconds;
+    private int tokenExpiresInSeconds;
     private final HttpClientFactory httpClientFactory;
     private final List<AccessTokenRefreshListener> accessTokenRefreshListeners = new ArrayList<>();
 
@@ -84,23 +84,19 @@ public class OAuthClientServiceImpl implements OAuthClientService {
      * @param handle The handle produced previously from
      *            {@link org.openhab.core.auth.client.oauth2.OAuthFactory#createOAuthClientService}
      * @param storeHandler Storage handler
-     * @param tokenExpiresInSeconds Positive integer; a small time buffer in seconds. It is used to calculate the expiry
-     *            of the access tokens. This allows the access token to expire earlier than the
-     *            official stated expiry time; thus prevents the caller obtaining a valid token at the time of invoke,
-     *            only to find the token immediately expired.
      * @param httpClientFactory Http client factory
      * @return new instance of OAuthClientServiceImpl or null if it doesn't exist
      * @throws IllegalStateException if store is not available.
      */
     static @Nullable OAuthClientServiceImpl getInstance(String handle, OAuthStoreHandler storeHandler,
-            int tokenExpiresInSeconds, HttpClientFactory httpClientFactory) {
+            HttpClientFactory httpClientFactory) {
         // Load parameters from Store
         PersistedParams persistedParamsFromStore = storeHandler.loadPersistedParams(handle);
         if (persistedParamsFromStore == null) {
             return null;
         }
-        OAuthClientServiceImpl clientService = new OAuthClientServiceImpl(handle, tokenExpiresInSeconds,
-                httpClientFactory);
+        OAuthClientServiceImpl clientService = new OAuthClientServiceImpl(handle,
+                persistedParamsFromStore.tokenExpiresInSeconds, httpClientFactory);
         clientService.storeHandler = storeHandler;
         clientService.persistedParams = persistedParamsFromStore;
 
@@ -343,19 +339,14 @@ public class OAuthClientServiceImpl implements OAuthClientService {
         storeHandler.saveAccessTokenResponse(handle, accessTokenResponse);
     }
 
-    /**
-     * Access tokens have expiry times. They are given by authorization server.
-     * This parameter introduces a buffer in seconds that deduct from the expires-in.
-     * For example, if the expires-in = 3600 seconds ( 1hour ), then setExpiresInBuffer(60)
-     * will remove 60 seconds from the expiry time. In other words, the expires-in
-     * becomes 3540 ( 59 mins ) effectively.
-     *
-     * Calls to protected resources can reasonably assume that the token is not expired.
-     *
-     * @param tokenExpiresInBuffer The number of seconds to remove the expires-in. Default 0 seconds.
-     */
+    @Override
     public void setTokenExpiresInBuffer(int tokenExpiresInBuffer) {
-        this.persistedParams.tokenExpiresInSeconds = tokenExpiresInBuffer;
+        if (tokenExpiresInBuffer < 0) {
+            throw new IllegalArgumentException("Token expire time must be greater than 0");
+        }
+        tokenExpiresInSeconds = tokenExpiresInBuffer;
+        persistedParams.tokenExpiresInSeconds = tokenExpiresInBuffer;
+        storeHandler.savePersistedParams(handle, persistedParams);
     }
 
     @Override

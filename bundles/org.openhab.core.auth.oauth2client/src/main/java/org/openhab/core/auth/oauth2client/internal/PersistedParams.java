@@ -31,7 +31,7 @@ class PersistedParams {
     Boolean supportsBasicAuth;
     String state;
     String redirectUri;
-    int tokenExpiresInSeconds = 60;
+    int tokenExpiresInSeconds = 10;
 
     /**
      * Default constructor needed for json serialization.

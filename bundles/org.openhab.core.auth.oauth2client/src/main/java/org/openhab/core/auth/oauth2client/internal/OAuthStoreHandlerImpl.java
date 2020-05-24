@@ -69,7 +69,7 @@ import com.google.gson.JsonSerializer;
  * @author Gary Tse - Initial contribution
  */
 @NonNullByDefault
-@Component(property = "CIPHER_TARGET=SymmetricKeyCipher")
+@Component(property = "CIPHER_TARGET=" + SymmetricKeyCipher.CIPHER_ID)
 public class OAuthStoreHandlerImpl implements OAuthStoreHandler {
 
     // easy mocking with protected access

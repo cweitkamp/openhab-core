@@ -253,6 +253,20 @@ public interface OAuthClientService extends AutoCloseable {
     AccessTokenResponse getAccessTokenResponse() throws OAuthException, IOException, OAuthResponseException;
 
     /**
+     * Access tokens have expiry times. They are given by authorization server.
+     * This parameter introduces a buffer in seconds that deduct from the expires-in.
+     * For example, if the expires-in = 3600 seconds ( 1 hour ), then {@link #setTokenExpiresInBuffer(60)}
+     * will remove 60 seconds from the expiry time. In other words, the expires-in
+     * becomes 3540 ( 59 mins ) effectively.
+     *
+     * Calls to protected resources can reasonably assume that the token is not expired.
+     *
+     * @param tokenExpiresInBuffer The number of seconds to remove the expires-in. Default 10 seconds.
+     * @throws IllegalArgumentException For an token expire time <= 0.
+     */
+    void setTokenExpiresInBuffer(int tokenExpiresInBuffer);
+
+    /**
      * Remove all access token issued under this OAuthClientService.
      * Use this to remove existing token or if the access and refresh token has become invalid/ invalidated.
      *

@@ -44,8 +44,6 @@ public class OAuthFactoryImpl implements OAuthFactory {
     private final OAuthStoreHandler oAuthStoreHandler;
     private final HttpClientFactory httpClientFactory;
 
-    private int tokenExpiresInBuffer = OAuthClientServiceImpl.DEFAULT_TOKEN_EXPIRES_IN_BUFFER_SECOND;
-
     private final Map<String, OAuthClientService> oauthClientServiceCache = new ConcurrentHashMap<>();
 
     @Activate
@@ -70,11 +68,10 @@ public class OAuthFactoryImpl implements OAuthFactory {
             @Nullable Boolean supportsBasicAuth) {
         PersistedParams params = oAuthStoreHandler.loadPersistedParams(handle);
         PersistedParams newParams = new PersistedParams(handle, tokenUrl, authorizationUrl, clientId, clientSecret,
-                scope, supportsBasicAuth, tokenExpiresInBuffer);
+                scope, supportsBasicAuth, OAuthClientServiceImpl.DEFAULT_TOKEN_EXPIRES_IN_BUFFER_SECOND);
         OAuthClientService clientImpl = null;
-
         // If parameters in storage and parameters are the same as arguments passed get the client from storage
-        if (params != null && params.equals(newParams)) {
+        if (newParams.equals(params)) {
             clientImpl = getOAuthClientService(handle);
         }
         // If no client with parameters or with different parameters create or update (if parameters are different)
@@ -89,12 +86,10 @@ public class OAuthFactoryImpl implements OAuthFactory {
     @Override
     public @Nullable OAuthClientService getOAuthClientService(String handle) {
         OAuthClientService clientImpl = oauthClientServiceCache.get(handle);
-
         if (clientImpl == null || clientImpl.isClosed()) {
             // This happens after reboot, or client was closed without factory knowing; create a new client
             // the store has the handle/config data
-            clientImpl = OAuthClientServiceImpl.getInstance(handle, oAuthStoreHandler, tokenExpiresInBuffer,
-                    httpClientFactory);
+            clientImpl = OAuthClientServiceImpl.getInstance(handle, oAuthStoreHandler, httpClientFactory);
             if (clientImpl == null) {
                 return null;
             }
@@ -107,7 +102,6 @@ public class OAuthFactoryImpl implements OAuthFactory {
     @Override
     public void ungetOAuthService(String handle) {
         OAuthClientService clientImpl = oauthClientServiceCache.get(handle);
-
         if (clientImpl == null) {
             logger.debug("{} handle not found. Cannot unregisterOAuthServie", handle);
             return;
@@ -119,7 +113,6 @@ public class OAuthFactoryImpl implements OAuthFactory {
     @Override
     public void deleteServiceAndAccessToken(String handle) {
         OAuthClientService clientImpl = oauthClientServiceCache.get(handle);
-
         if (clientImpl != null) {
             try {
                 clientImpl.remove();
@@ -129,13 +122,5 @@ public class OAuthFactoryImpl implements OAuthFactory {
             oauthClientServiceCache.remove(handle);
         }
         oAuthStoreHandler.remove(handle);
-    }
-
-    public int getTokenExpiresInBuffer() {
-        return tokenExpiresInBuffer;
-    }
-
-    public void setTokenExpiresInBuffer(int bufferInSeconds) {
-        tokenExpiresInBuffer = bufferInSeconds;
     }
 }
