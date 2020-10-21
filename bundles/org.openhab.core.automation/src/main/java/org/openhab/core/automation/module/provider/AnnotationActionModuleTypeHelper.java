@@ -164,6 +164,17 @@ public class AnnotationActionModuleTypeHelper {
                 kind = ActionModuleKind.SERVICE;
             } else if (mi.getThingUID() != null) {
                 kind = ActionModuleKind.THING;
+                mi.getInputs().forEach(input -> {
+                    ConfigDescriptionParameter configParam = ConfigDescriptionParameterBuilder
+                            // .create(input.getName(), input.getType()) //
+                            .create(input.getName(), Type.TEXT) //
+                            .withLabel(input.getLabel()) //
+                            .withDescription(input.getDescription()) //
+                            .withRequired(input.isRequired()) //
+                            .withDefault(input.getDefaultValue()) //
+                            .build();
+                    configDescriptions.add(configParam);
+                });
             }
 
             ConfigDescriptionParameter configParam = buildConfigParam(mis, kind);

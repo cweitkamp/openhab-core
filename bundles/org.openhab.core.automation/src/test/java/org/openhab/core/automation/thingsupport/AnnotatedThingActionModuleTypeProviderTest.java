@@ -12,14 +12,16 @@
  */
 package org.openhab.core.automation.thingsupport;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.jdt.annotation.Nullable;
@@ -106,14 +108,14 @@ public class AnnotatedThingActionModuleTypeProviderTest extends JavaTest {
         prov.addAnnotatedThingActions(actionProviderConf1);
 
         Collection<String> types = prov.getTypes();
-        assertEquals(1, types.size());
+        assertThat(types, hasSize(1));
         assertTrue(types.contains(TEST_ACTION_TYPE_ID));
 
         prov.addAnnotatedThingActions(actionProviderConf2);
 
         // we only have ONE type but TWO configurations for it
         types = prov.getTypes();
-        assertEquals(1, types.size());
+        assertThat(types, hasSize(1));
         assertTrue(types.contains(TEST_ACTION_TYPE_ID));
 
         ModuleType mt = prov.getModuleType(TEST_ACTION_TYPE_ID, null);
@@ -127,11 +129,12 @@ public class AnnotatedThingActionModuleTypeProviderTest extends JavaTest {
         assertEquals(TEST_ACTION_TYPE_ID, at.getUID());
 
         Set<String> tags = at.getTags();
+        assertThat(tags, hasSize(2));
         assertTrue(tags.contains("tag1"));
         assertTrue(tags.contains("tag2"));
 
         List<Input> inputs = at.getInputs();
-        assertEquals(2, inputs.size());
+        assertThat(inputs, hasSize(2));
 
         for (Input in : inputs) {
             if (ACTION_INPUT1.equals(in.getName())) {
@@ -143,6 +146,7 @@ public class AnnotatedThingActionModuleTypeProviderTest extends JavaTest {
                 assertEquals("Item", in.getType());
 
                 Set<String> inputTags = in.getTags();
+                assertThat(inputTags, hasSize(2));
                 assertTrue(inputTags.contains("tagIn11"));
                 assertTrue(inputTags.contains("tagIn12"));
             } else if (ACTION_INPUT2.equals(in.getName())) {
@@ -152,7 +156,7 @@ public class AnnotatedThingActionModuleTypeProviderTest extends JavaTest {
         }
 
         List<Output> outputs = at.getOutputs();
-        assertEquals(2, outputs.size());
+        assertThat(outputs, hasSize(2));
 
         for (Output o : outputs) {
             if (ACTION_OUTPUT1.equals(o.getName())) {
@@ -163,6 +167,7 @@ public class AnnotatedThingActionModuleTypeProviderTest extends JavaTest {
                 assertEquals(ACTION_OUTPUT1_TYPE, o.getType());
 
                 Set<String> outputTags = o.getTags();
+                assertThat(outputTags, hasSize(2));
                 assertTrue(outputTags.contains("tagOut11"));
                 assertTrue(outputTags.contains("tagOut12"));
             } else if (ACTION_INPUT2.equals(o.getName())) {
@@ -170,10 +175,18 @@ public class AnnotatedThingActionModuleTypeProviderTest extends JavaTest {
             }
         }
 
+        // check if each input has a matching config description parameter
+        assertThat(at.getConfigurationDescriptions(), hasSize(3));
+        for (Input in : inputs) {
+            Optional<ConfigDescriptionParameter> cdp = at.getConfigurationDescriptions().stream()
+                    .filter(cd -> cd.getName().equals(in.getName())).findFirst();
+            assertTrue(cdp.isPresent());
+        }
+
         // remove the first configuration
         prov.removeAnnotatedThingActions(actionProviderConf1);
         types = prov.getTypes();
-        assertEquals(1, types.size());
+        assertThat(types, hasSize(1));
 
         // check of the second configuration is still valid
         mt = prov.getModuleType(TEST_ACTION_TYPE_ID, null);
@@ -183,7 +196,7 @@ public class AnnotatedThingActionModuleTypeProviderTest extends JavaTest {
             if (AnnotationActionModuleTypeHelper.CONFIG_PARAM.equals(cdp.getName())) {
                 found = true;
                 List<ParameterOption> parameterOptions = cdp.getOptions();
-                assertEquals(1, parameterOptions.size());
+                assertThat(parameterOptions, hasSize(1));
 
                 ParameterOption po = parameterOptions.get(0);
                 assertEquals("binding:thing-type:test2", po.getValue());
@@ -194,7 +207,7 @@ public class AnnotatedThingActionModuleTypeProviderTest extends JavaTest {
         // remove the second configuration and there should be none left
         prov.removeAnnotatedThingActions(actionProviderConf2);
         types = prov.getTypes();
-        assertEquals(0, types.size());
+        assertThat(types, hasSize(0));
 
         mt = prov.getModuleType(TEST_ACTION_TYPE_ID, null);
         assertNull(mt);
@@ -213,11 +226,7 @@ public class AnnotatedThingActionModuleTypeProviderTest extends JavaTest {
                         @ActionInput(name = ACTION_INPUT1, label = ACTION_INPUT1_LABEL, defaultValue = ACTION_INPUT1_DEFAULT_VALUE, description = ACTION_INPUT1_DESCRIPTION, reference = ACTION_INPUT1_REFERENCE, required = true, type = "Item", tags = {
                                 "tagIn11", "tagIn12" }) String input1,
                         @ActionInput(name = ACTION_INPUT2) String input2) {
-            Map<String, Object> result = new HashMap<>();
-            result.put("output1", 23);
-            result.put("output2", "hello world");
-
-            return result;
+            return Map.of("output1", 23, "output2", "hello world");
         }
 
         @Override
