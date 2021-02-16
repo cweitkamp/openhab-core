@@ -457,14 +457,14 @@ public abstract class BaseThingHandler implements ThingHandler {
      *
      * @param properties properties map, that was updated and should be persisted
      */
-    protected void updateProperties(Map<String, String> properties) {
+    protected void updateProperties(Map<String, @Nullable String> properties) {
         boolean propertiesUpdated = false;
-        for (Entry<String, String> property : properties.entrySet()) {
+        for (Entry<String, @Nullable String> property : properties.entrySet()) {
             String propertyName = property.getKey();
             String propertyValue = property.getValue();
             String existingPropertyValue = thing.getProperties().get(propertyName);
             if (existingPropertyValue == null || !existingPropertyValue.equals(propertyValue)) {
-                this.thing.setProperty(propertyName, propertyValue);
+                thing.setProperty(propertyName, propertyValue);
                 propertiesUpdated = true;
             }
         }
@@ -494,7 +494,7 @@ public abstract class BaseThingHandler implements ThingHandler {
      * @param name the name of the property to be set
      * @param value the value of the property
      */
-    protected void updateProperty(String name, String value) {
+    protected void updateProperty(String name, @Nullable String value) {
         updateProperties(Collections.singletonMap(name, value));
     }
 
