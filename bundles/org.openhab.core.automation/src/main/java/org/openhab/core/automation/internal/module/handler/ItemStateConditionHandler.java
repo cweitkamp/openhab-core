@@ -14,6 +14,7 @@ package org.openhab.core.automation.internal.module.handler;
 
 import java.util.Map;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.core.automation.Condition;
 import org.openhab.core.automation.handler.BaseConditionModuleHandler;
 import org.openhab.core.items.Item;
@@ -31,6 +32,7 @@ import org.slf4j.LoggerFactory;
  * @author Benedikt Niehues - Initial contribution
  * @author Kai Kreuzer - refactored and simplified customized module handling
  */
+@NonNullByDefault
 public class ItemStateConditionHandler extends BaseConditionModuleHandler {
 
     /**
@@ -45,33 +47,12 @@ public class ItemStateConditionHandler extends BaseConditionModuleHandler {
 
     public static final String ITEM_STATE_CONDITION = "core.ItemStateCondition";
 
-    private ItemRegistry itemRegistry;
+    private final ItemRegistry itemRegistry;
 
-    public ItemStateConditionHandler(Condition condition) {
+    public ItemStateConditionHandler(Condition condition, ItemRegistry itemRegistry) {
         super(condition);
-    }
 
-    /**
-     * setter for itemRegistry, used by DS
-     *
-     * @param itemRegistry
-     */
-    public void setItemRegistry(ItemRegistry itemRegistry) {
         this.itemRegistry = itemRegistry;
-    }
-
-    /**
-     * unsetter for itemRegistry used by DS
-     *
-     * @param itemRegistry
-     */
-    public void unsetItemRegistry(ItemRegistry itemRegistry) {
-        this.itemRegistry = null;
-    }
-
-    @Override
-    public void dispose() {
-        itemRegistry = null;
     }
 
     @Override
@@ -82,10 +63,6 @@ public class ItemStateConditionHandler extends BaseConditionModuleHandler {
         if (operator == null || state == null || itemName == null) {
             logger.error("Module is not well configured: itemName={}  operator={}  state = {}", itemName, operator,
                     state);
-            return false;
-        }
-        if (itemRegistry == null) {
-            logger.error("The ItemRegistry is not available to evaluate the condition.");
             return false;
         }
         try {

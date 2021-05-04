@@ -19,6 +19,8 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.core.automation.Trigger;
 import org.openhab.core.automation.handler.BaseTriggerModuleHandler;
 import org.openhab.core.automation.handler.TriggerHandlerCallback;
@@ -37,6 +39,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Stefan Triller - Initial contribution
  */
+@NonNullByDefault
 public class ChannelEventTriggerHandler extends BaseTriggerModuleHandler implements EventSubscriber, EventFilter {
 
     public static final String MODULE_TYPE_ID = "core.ChannelEventTrigger";
@@ -52,8 +55,7 @@ public class ChannelEventTriggerHandler extends BaseTriggerModuleHandler impleme
     private final Set<String> types = new HashSet<>();
     private final BundleContext bundleContext;
 
-    @SuppressWarnings("rawtypes")
-    private ServiceRegistration eventSubscriberRegistration;
+    private @Nullable ServiceRegistration<?> eventSubscriberRegistration;
 
     public ChannelEventTriggerHandler(Trigger module, BundleContext bundleContext) {
         super(module);
@@ -101,7 +103,7 @@ public class ChannelEventTriggerHandler extends BaseTriggerModuleHandler impleme
     }
 
     @Override
-    public EventFilter getEventFilter() {
+    public @Nullable EventFilter getEventFilter() {
         return this;
     }
 

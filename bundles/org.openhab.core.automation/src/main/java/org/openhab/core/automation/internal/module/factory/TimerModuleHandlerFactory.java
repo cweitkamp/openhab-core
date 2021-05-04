@@ -10,18 +10,25 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.core.automation.internal.module.handler;
+package org.openhab.core.automation.internal.module.factory;
 
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.core.automation.Condition;
 import org.openhab.core.automation.Module;
 import org.openhab.core.automation.Trigger;
 import org.openhab.core.automation.handler.BaseModuleHandlerFactory;
 import org.openhab.core.automation.handler.ModuleHandler;
 import org.openhab.core.automation.handler.ModuleHandlerFactory;
+import org.openhab.core.automation.internal.module.handler.DayOfWeekConditionHandler;
+import org.openhab.core.automation.internal.module.handler.GenericCronTriggerHandler;
+import org.openhab.core.automation.internal.module.handler.TimeOfDayConditionHandler;
+import org.openhab.core.automation.internal.module.handler.TimeOfDayTriggerHandler;
 import org.openhab.core.scheduler.CronScheduler;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
@@ -35,31 +42,28 @@ import org.slf4j.LoggerFactory;
  * @author Christoph Knauf - Initial contribution
  * @author Kai Kreuzer - added new module types
  */
-@Component(immediate = true, service = ModuleHandlerFactory.class)
+@Component(service = ModuleHandlerFactory.class)
+@NonNullByDefault
 public class TimerModuleHandlerFactory extends BaseModuleHandlerFactory {
 
     private final Logger logger = LoggerFactory.getLogger(TimerModuleHandlerFactory.class);
 
     public static final String THREADPOOLNAME = "ruletimer";
-    private static final Collection<String> TYPES = Arrays
-            .asList(new String[] { GenericCronTriggerHandler.MODULE_TYPE_ID, TimeOfDayTriggerHandler.MODULE_TYPE_ID,
-                    TimeOfDayConditionHandler.MODULE_TYPE_ID, DayOfWeekConditionHandler.MODULE_TYPE_ID });
+    private static final Collection<String> TYPES = List.of(GenericCronTriggerHandler.MODULE_TYPE_ID,
+            TimeOfDayTriggerHandler.MODULE_TYPE_ID, TimeOfDayConditionHandler.MODULE_TYPE_ID,
+            DayOfWeekConditionHandler.MODULE_TYPE_ID);
 
-    private CronScheduler scheduler;
+    private final CronScheduler scheduler;
+
+    @Activate
+    public TimerModuleHandlerFactory(final @Reference CronScheduler scheduler) {
+        this.scheduler = scheduler;
+    }
 
     @Override
     @Deactivate
     public void deactivate() {
         super.deactivate();
-    }
-
-    @Reference
-    protected void setCronScheduler(CronScheduler scheduler) {
-        this.scheduler = scheduler;
-    }
-
-    protected void unsetCronScheduler(CronScheduler scheduler) {
-        this.scheduler = null;
     }
 
     @Override
@@ -68,7 +72,7 @@ public class TimerModuleHandlerFactory extends BaseModuleHandlerFactory {
     }
 
     @Override
-    protected ModuleHandler internalCreate(Module module, String ruleUID) {
+    protected @Nullable ModuleHandler internalCreate(Module module, String ruleUID) {
         logger.trace("create {} -> {}", module.getId(), module.getTypeUID());
         String moduleTypeUID = module.getTypeUID();
         if (GenericCronTriggerHandler.MODULE_TYPE_ID.equals(moduleTypeUID) && module instanceof Trigger) {

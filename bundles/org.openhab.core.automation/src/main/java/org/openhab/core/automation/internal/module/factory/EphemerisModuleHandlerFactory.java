@@ -37,9 +37,9 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christoph Weitkamp - Initial contribution
  */
-@Component
+@Component(service = ModuleHandlerFactory.class)
 @NonNullByDefault
-public class EphemerisModuleHandlerFactory extends BaseModuleHandlerFactory implements ModuleHandlerFactory {
+public class EphemerisModuleHandlerFactory extends BaseModuleHandlerFactory {
 
     private final Logger logger = LoggerFactory.getLogger(EphemerisModuleHandlerFactory.class);
 

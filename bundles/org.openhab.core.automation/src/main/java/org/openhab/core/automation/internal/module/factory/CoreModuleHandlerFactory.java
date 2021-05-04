@@ -12,9 +12,11 @@
  */
 package org.openhab.core.automation.internal.module.factory;
 
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.core.automation.Action;
 import org.openhab.core.automation.Condition;
 import org.openhab.core.automation.Module;
@@ -54,12 +56,13 @@ import org.slf4j.LoggerFactory;
  * @author Benedikt Niehues - Initial contribution
  * @author Kai Kreuzer - refactored and simplified customized module handling
  */
-@Component
-public class CoreModuleHandlerFactory extends BaseModuleHandlerFactory implements ModuleHandlerFactory {
+@Component(service = ModuleHandlerFactory.class)
+@NonNullByDefault
+public class CoreModuleHandlerFactory extends BaseModuleHandlerFactory {
 
     private final Logger logger = LoggerFactory.getLogger(CoreModuleHandlerFactory.class);
 
-    private static final Collection<String> TYPES = Arrays.asList(ItemCommandTriggerHandler.MODULE_TYPE_ID,
+    private static final Collection<String> TYPES = List.of(ItemCommandTriggerHandler.MODULE_TYPE_ID,
             GroupCommandTriggerHandler.MODULE_TYPE_ID, ItemStateTriggerHandler.UPDATE_MODULE_TYPE_ID,
             ItemStateTriggerHandler.CHANGE_MODULE_TYPE_ID, GroupStateTriggerHandler.UPDATE_MODULE_TYPE_ID,
             GroupStateTriggerHandler.CHANGE_MODULE_TYPE_ID, ThingStatusTriggerHandler.UPDATE_MODULE_TYPE_ID,
@@ -70,13 +73,15 @@ public class CoreModuleHandlerFactory extends BaseModuleHandlerFactory implement
             CompareConditionHandler.MODULE_TYPE, SystemTriggerHandler.STARTLEVEL_MODULE_TYPE_ID,
             RuleEnablementActionHandler.UID, RunRuleActionHandler.UID);
 
-    private ItemRegistry itemRegistry;
-    private EventPublisher eventPublisher;
-
-    private BundleContext bundleContext;
+    private final ItemRegistry itemRegistry;
+    private final EventPublisher eventPublisher;
+    private final BundleContext bundleContext;
 
     @Activate
-    protected void activate(BundleContext bundleContext) {
+    public CoreModuleHandlerFactory(final @Reference BundleContext bundleContext,
+            final @Reference ItemRegistry itemRegistry, final @Reference EventPublisher eventPublisher) {
+        this.itemRegistry = itemRegistry;
+        this.eventPublisher = eventPublisher;
         this.bundleContext = bundleContext;
     }
 
@@ -91,78 +96,8 @@ public class CoreModuleHandlerFactory extends BaseModuleHandlerFactory implement
         return TYPES;
     }
 
-    /**
-     * the itemRegistry was added (called by serviceTracker)
-     *
-     * @param itemRegistry
-     */
-    @Reference
-    protected void setItemRegistry(ItemRegistry itemRegistry) {
-        this.itemRegistry = itemRegistry;
-        for (ModuleHandler handler : getHandlers().values()) {
-            if (handler instanceof ItemStateConditionHandler) {
-                ((ItemStateConditionHandler) handler).setItemRegistry(this.itemRegistry);
-            } else if (handler instanceof ItemCommandActionHandler) {
-                ((ItemCommandActionHandler) handler).setItemRegistry(this.itemRegistry);
-            } else if (handler instanceof GroupCommandTriggerHandler) {
-                ((GroupCommandTriggerHandler) handler).setItemRegistry(this.itemRegistry);
-            } else if (handler instanceof GroupStateTriggerHandler) {
-                ((GroupStateTriggerHandler) handler).setItemRegistry(this.itemRegistry);
-            }
-        }
-    }
-
-    /**
-     * unsetter for itemRegistry (called by serviceTracker)
-     *
-     * @param itemRegistry
-     */
-    protected void unsetItemRegistry(ItemRegistry itemRegistry) {
-        for (ModuleHandler handler : getHandlers().values()) {
-            if (handler instanceof ItemStateConditionHandler) {
-                ((ItemStateConditionHandler) handler).unsetItemRegistry(this.itemRegistry);
-            } else if (handler instanceof ItemCommandActionHandler) {
-                ((ItemCommandActionHandler) handler).unsetItemRegistry(this.itemRegistry);
-            } else if (handler instanceof GroupCommandTriggerHandler) {
-                ((GroupCommandTriggerHandler) handler).unsetItemRegistry(this.itemRegistry);
-            } else if (handler instanceof GroupStateTriggerHandler) {
-                ((GroupStateTriggerHandler) handler).unsetItemRegistry(this.itemRegistry);
-            }
-        }
-        this.itemRegistry = null;
-    }
-
-    /**
-     * setter for the eventPublisher (called by serviceTracker)
-     *
-     * @param eventPublisher
-     */
-    @Reference
-    protected void setEventPublisher(EventPublisher eventPublisher) {
-        this.eventPublisher = eventPublisher;
-        for (ModuleHandler handler : getHandlers().values()) {
-            if (handler instanceof ItemCommandActionHandler) {
-                ((ItemCommandActionHandler) handler).setEventPublisher(eventPublisher);
-            }
-        }
-    }
-
-    /**
-     * unsetter for eventPublisher (called by serviceTracker)
-     *
-     * @param eventPublisher
-     */
-    protected void unsetEventPublisher(EventPublisher eventPublisher) {
-        this.eventPublisher = null;
-        for (ModuleHandler handler : getHandlers().values()) {
-            if (handler instanceof ItemCommandActionHandler) {
-                ((ItemCommandActionHandler) handler).unsetEventPublisher(eventPublisher);
-            }
-        }
-    }
-
     @Override
-    protected synchronized ModuleHandler internalCreate(final Module module, final String ruleUID) {
+    protected synchronized @Nullable ModuleHandler internalCreate(final Module module, final String ruleUID) {
         logger.trace("create {} -> {} : {}", module.getId(), module.getTypeUID(), ruleUID);
         final String moduleTypeUID = module.getTypeUID();
         if (module instanceof Trigger) {
@@ -182,22 +117,15 @@ public class CoreModuleHandlerFactory extends BaseModuleHandlerFactory implement
                     || ItemStateTriggerHandler.UPDATE_MODULE_TYPE_ID.equals(moduleTypeUID)) {
                 return new ItemStateTriggerHandler((Trigger) module, bundleContext);
             } else if (GroupCommandTriggerHandler.MODULE_TYPE_ID.equals(moduleTypeUID)) {
-                final GroupCommandTriggerHandler handler = new GroupCommandTriggerHandler((Trigger) module,
-                        bundleContext);
-                handler.setItemRegistry(itemRegistry);
-                return handler;
+                return new GroupCommandTriggerHandler((Trigger) module, bundleContext, itemRegistry);
             } else if (GroupStateTriggerHandler.CHANGE_MODULE_TYPE_ID.equals(moduleTypeUID)
                     || GroupStateTriggerHandler.UPDATE_MODULE_TYPE_ID.equals(moduleTypeUID)) {
-                final GroupStateTriggerHandler handler = new GroupStateTriggerHandler((Trigger) module, bundleContext);
-                handler.setItemRegistry(itemRegistry);
-                return handler;
+                return new GroupStateTriggerHandler((Trigger) module, bundleContext, itemRegistry);
             }
         } else if (module instanceof Condition) {
             // Handle conditions
             if (ItemStateConditionHandler.ITEM_STATE_CONDITION.equals(moduleTypeUID)) {
-                ItemStateConditionHandler handler = new ItemStateConditionHandler((Condition) module);
-                handler.setItemRegistry(itemRegistry);
-                return handler;
+                return new ItemStateConditionHandler((Condition) module, itemRegistry);
             } else if (GenericEventConditionHandler.MODULETYPE_ID.equals(moduleTypeUID)) {
                 return new GenericEventConditionHandler((Condition) module);
             } else if (CompareConditionHandler.MODULE_TYPE.equals(moduleTypeUID)) {
@@ -206,10 +134,7 @@ public class CoreModuleHandlerFactory extends BaseModuleHandlerFactory implement
         } else if (module instanceof Action) {
             // Handle actions
             if (ItemCommandActionHandler.ITEM_COMMAND_ACTION.equals(moduleTypeUID)) {
-                final ItemCommandActionHandler postCommandActionHandler = new ItemCommandActionHandler((Action) module);
-                postCommandActionHandler.setEventPublisher(eventPublisher);
-                postCommandActionHandler.setItemRegistry(itemRegistry);
-                return postCommandActionHandler;
+                return new ItemCommandActionHandler((Action) module, eventPublisher, itemRegistry);
             } else if (ItemStateUpdateActionHandler.ITEM_STATE_UPDATE_ACTION.equals(moduleTypeUID)) {
                 return new ItemStateUpdateActionHandler((Action) module, eventPublisher, itemRegistry);
             } else if (RuleEnablementActionHandler.UID.equals(moduleTypeUID)) {

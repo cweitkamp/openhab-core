@@ -18,6 +18,8 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.core.automation.Trigger;
 import org.openhab.core.automation.handler.BaseTriggerModuleHandler;
 import org.openhab.core.automation.handler.TriggerHandlerCallback;
@@ -41,6 +43,7 @@ import org.slf4j.LoggerFactory;
  * @author Benedikt Niehues - Initial contribution
  * @author Kai Kreuzer - refactored and simplified customized module handling
  */
+@NonNullByDefault
 public class GenericEventTriggerHandler extends BaseTriggerModuleHandler implements EventSubscriber, EventFilter {
 
     public static final String MODULE_TYPE_ID = "core.GenericEventTrigger";
@@ -56,7 +59,7 @@ public class GenericEventTriggerHandler extends BaseTriggerModuleHandler impleme
     private final Set<String> types;
     private final BundleContext bundleContext;
 
-    private ServiceRegistration<?> eventSubscriberRegistration;
+    private @Nullable ServiceRegistration<?> eventSubscriberRegistration;
 
     public GenericEventTriggerHandler(Trigger module, BundleContext bundleContext) {
         super(module);
@@ -81,7 +84,7 @@ public class GenericEventTriggerHandler extends BaseTriggerModuleHandler impleme
     }
 
     @Override
-    public EventFilter getEventFilter() {
+    public @Nullable EventFilter getEventFilter() {
         return this;
     }
 

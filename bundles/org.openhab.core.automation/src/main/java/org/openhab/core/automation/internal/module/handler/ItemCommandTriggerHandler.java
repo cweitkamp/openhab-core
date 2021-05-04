@@ -18,6 +18,8 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.core.automation.Trigger;
 import org.openhab.core.automation.handler.BaseTriggerModuleHandler;
 import org.openhab.core.automation.handler.TriggerHandlerCallback;
@@ -38,6 +40,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Kai Kreuzer - Initial contribution
  */
+@NonNullByDefault
 public class ItemCommandTriggerHandler extends BaseTriggerModuleHandler implements EventSubscriber, EventFilter {
 
     public static final String MODULE_TYPE_ID = "core.ItemCommandTrigger";
@@ -54,7 +57,7 @@ public class ItemCommandTriggerHandler extends BaseTriggerModuleHandler implemen
     private final Set<String> types;
     private final BundleContext bundleContext;
 
-    private ServiceRegistration<?> eventSubscriberRegistration;
+    private @Nullable ServiceRegistration<?> eventSubscriberRegistration;
 
     public ItemCommandTriggerHandler(Trigger module, BundleContext bundleContext) {
         super(module);
@@ -75,7 +78,7 @@ public class ItemCommandTriggerHandler extends BaseTriggerModuleHandler implemen
     }
 
     @Override
-    public EventFilter getEventFilter() {
+    public @Nullable EventFilter getEventFilter() {
         return this;
     }
 
